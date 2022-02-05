@@ -1,0 +1,5 @@
+name: 'Single Config Download'
+description: 'Allows download of single configuration YML files.'
+type: module
+core_version_requirement: ^8 || ^9
+version: '1.0'

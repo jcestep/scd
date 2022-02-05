@@ -1,0 +1,4 @@
+scd_form_helper:
+  version: 1.x
+  js:
+    js/scd-form-helper.js: {}

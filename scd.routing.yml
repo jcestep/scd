@@ -1,0 +1,6 @@
+scd.download:
+  path: 'admin/scd/download/{config_machine_name}'
+  defaults:
+    _controller: '\Drupal\scd\Controller\ConfigDownloader::download'
+  requirements:
+    _permission: 'export configuration'

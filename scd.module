@@ -1,0 +1,74 @@
+<?php
+
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Link;
+
+/**
+ * Implements hook_form_FROM_ID_alter().
+ */
+function scd_form_config_admin_import_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  // Link modified config on the sync page to the direct download page.
+  foreach ($form['']['update']['list']['#rows'] as &$config_row) {
+    $link_label = $config_row['name'];
+    $link = Link::createFromRoute($link_label, 'scd.download', [
+     'config_machine_name' => $link_label,
+    ])->toRenderable();
+
+    $config_row['name'] = \Drupal::service('renderer')->render($link);
+  }
+}
+
+/**
+ * Implements hook_form_FROM_ID_alter().
+ */
+function scd_form_config_single_export_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  $form['download_button'] = [
+    '#type' => 'submit',
+    '#value' => t('Download Configuration'),
+    '#attributes' => [
+      'class' => ['config-download-button'],
+    ],
+  ];
+
+  // Updates the config name and type form selects to display a "- Select -" value
+  // as the first option; a long-standing usability flaw on this form.
+  array_unshift($form['config_type']['#options'], '- Select -');
+  array_unshift($form['config_name']['#options'], '- Select -');
+
+  // Adds helper jQuery to correct existing usability issues
+  // on this form and to conditionally show or hide the download
+  // button as needed.
+  $form['#attached']['library'][] = 'scd/scd_form_helper';
+  $form['#submit'][] = '_scd_download_submit';
+}
+
+/**
+ * The Download button's submit function which redirects
+ * to the single config download path.
+ */
+function _scd_download_submit(&$form, FormStateInterface $form_state) {
+  $config_name = $form_state->getValue('config_name');
+  $config_type = $form_state->getValue('config_type');
+  $full_config_name = _scd_get_config_name($form_state);
+  $form_state->setRedirect('scd.download', [
+    'config_machine_name' => $full_config_name,
+  ]);
+}
+
+/**
+ * Helper function to get the fully formed config name.
+ */
+function _scd_get_config_name(FormStateInterface $form_state) {
+  $config_name = $form_state->getValue('config_name');
+  $config_type = $form_state->getValue('config_type');
+  if (!empty($config_name) && !empty($config_type)) {
+    if ($config_type !== 'system.simple') {
+      $definition = \Drupal::entityTypeManager()->getDefinition($config_type);
+      $name = $definition->getConfigPrefix() . '.' . $config_name;
+    }
+    else {
+      $name = $config_name;
+    }
+  }
+  return $name;
+}
